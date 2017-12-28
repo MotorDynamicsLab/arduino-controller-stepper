@@ -6,6 +6,7 @@
 //###########################################################################
 #ifndef _ARCS_H_
 #define _ARCS_H_
+#include "Gpio.h"
 
 enum ArcsMicroStep
 {
@@ -30,12 +31,22 @@ enum ArcsDirection
 class Arcs
 {
 private:
+	Gpio pinEn;
+	Gpio pinReset;
+	Gpio pinStep;
+	Gpio pinDir;
+	Gpio pinTorque;
+
 public:
   Arcs();
+  void Initialize(uint8_t stepPin,uint8_t dirPin);
+  void setSpeed(uin32_t frequency);
+  void setDir(ArcsDirection dir)
   void setMicroStep(ArcsMicroStep setting);
   void setCurrent(ArcsCurrentMode mode);
   void moveMotor();
   void stopMotor();
+  void Reset();
 };
 
 #endif /* _ARCS_H_ */
