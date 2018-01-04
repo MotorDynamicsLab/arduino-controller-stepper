@@ -35,6 +35,7 @@ Gpio::Gpio()
 }
 
 
+///This function is disabled if this pin has a PWM function
 void Gpio::turnOffPWM(uint8_t timer)
 {
   switch (timer)
@@ -99,6 +100,7 @@ void Gpio::turnOffPWM(uint8_t timer)
 }
 
 
+///Turn off the PWM clock
 void Gpio::ClosePwmClock()
 {
 	for (int i = 0; PwmClockTable[i].pwmclock != _END; i++)
@@ -111,6 +113,7 @@ void Gpio::ClosePwmClock()
 }
 
 
+///Initialize GPIO pins
 void Gpio::Initialize(PinChannel ch, PinMode mod, uint8_t pinnum)
 {
 	this->ch = ch;
@@ -121,6 +124,7 @@ void Gpio::Initialize(PinChannel ch, PinMode mod, uint8_t pinnum)
 }
 
 
+///Set GPIO mode
 void Gpio::SetPinMode(PinMode mod)
 {
 	volatile uint8_t *reg, *out;
@@ -150,6 +154,7 @@ void Gpio::SetPinMode(PinMode mod)
 }
 
 
+///Modify the GPIO pin output level
 void Gpio::Write(uint8_t state)
 {
 	volatile uint8_t *out;
@@ -171,6 +176,7 @@ void Gpio::Write(uint8_t state)
 }
 
 
+///Read the GPIO pin input level
 int Gpio::Read()
 {
 	if (*portInputRegister(ch) & (1 << pinnum))
