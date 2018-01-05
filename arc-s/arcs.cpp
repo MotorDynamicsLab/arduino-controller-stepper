@@ -49,8 +49,8 @@ void Arcs::Initialize(ConfigPinStruct pinInfo)
 	//Initialize timer 5
 	TCCR5A = 0;
 	TCCR5B = 0;
-	TCCR5A |= _BV(COM5A0);
-	TCCR5B |= _BV(WGM52);
+	TCCR5A |= _BV(COM5A0) | _BV(WGM51) | _BV(WGM50);
+	TCCR5B |= _BV(WGM52) |  _BV(WGM53);
 }
 
 
