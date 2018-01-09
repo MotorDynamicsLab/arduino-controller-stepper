@@ -21,29 +21,32 @@ private:
 	Gpio pinMs2;
 	Gpio pinMs3;
 	volatile uint32_t lines;
-	volatile double speedmin;
+	volatile double rev;
+	uint16_t acceleratedspeed;
+	uint32_t accelerategap;
+	const uint8_t minSpeed = 3;
 
 public:
-  enum ArcsMicroStep
-  {
-    ARCS_DIV1 = 1,
-    ARCS_DIV2 = 2,
-    ARCS_DIV4 = 4,
-    ARCS_DIV8 = 8,
-    ARCS_DIV16 = 16,
-  };
+	enum ArcsMicroStep
+	{
+		ARCS_DIV1 = 1,
+		ARCS_DIV2 = 2,
+		ARCS_DIV4 = 4,
+		ARCS_DIV8 = 8,
+		ARCS_DIV16 = 16,
+	};
 
-  enum ArcsCurrentMode
-  {
-    ARCS_MODE_1,
-    ARCS_MODE_2,
-  };
+	enum ArcsCurrentMode
+	{
+		ARCS_MODE_1,
+		ARCS_MODE_2,
+	};
 
-  enum ArcsDirection
-  {
-   ARCS_FORWARD,
-   ARCS_REVERSE,
-  };
+	enum ArcsDirection
+	{
+		ARCS_FORWARD,
+		ARCS_REVERSE,
+	};
 	struct ConfigPinStruct
 	{
 		Gpio::PinChannel pinEnCh;
@@ -69,13 +72,13 @@ public:
 	};
 
 private:
-  ArcsMicroStep microstep;
+	ArcsMicroStep microstep;
 	void updateStep();
 
 public:
 	Arcs();
 	void Initialize(ConfigPinStruct pinInfo);
-	void configSpeed(uint32_t lines,double speedmin,ArcsMicroStep microstep = 1);
+	void configSpeed(uint32_t lines, double rev, ArcsMicroStep microstep = 16);
 	void speedUp(double value);
 	void slowDown(double value);
 	void setDir(ArcsDirection dir);
@@ -84,12 +87,15 @@ public:
 	void enableMotor();
 	void disableMotor();
 	void Reset();
+	void setAcceleratedSpeed(uint8_t accspe);
+	void speedTransmission(double speedvalue);
+  void runInstepcounting(uint64_t stepnum,bool isRepeat);
 
 	///Start pulsing to run the motor
-	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); updateStep(); };
+	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); OCR5A = 0xfffe; speedTransmission(rev); };
 
 	///Stop the pulse to stop the motor
-	inline void stopMotor() { PRR1 |= _BV(PRTIM5); updateStep(); };
+	inline void stopMotor() { speedTransmission(0); };
 };
 
 #endif /* _ARCS_H_ */

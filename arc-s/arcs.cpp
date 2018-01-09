@@ -9,27 +9,16 @@
 
 Arcs::Arcs()
 {
+	accelerategap = 5000;
+	acceleratedspeed = 10;
 }
 
 
 ///Update pulse speed
 void Arcs::updateStep()
 {
-  TCCR5B &= ~( _BV(CS52) | _BV(CS51) | _BV(CS50) );
-  if(lines * speedmin * microstep <= 7000)
-  {
-    //1024 frequency
-    TCCR5B |= _BV(CS52) | _BV(CS50);
-    //When not divisible, try to minimize the error
-    OCR5A =  uint16_t( (IOCLOCK / 2 / 1024) / (lines * speedmin * microstep / 60) + 0.5 ) - 1;
-  }
-  else
-  {
-    //1 frequency
-    TCCR5B |=  _BV(CS50);
-    OCR5A =  uint16_t( (IOCLOCK / 2 ) / (lines * speedmin * microstep / 60) + 0.5 ) - 1;
-  }
-  TCNT5 = 0;
+	OCR5A = uint16_t((IOCLOCK / 2) / (lines * rev * microstep / 60) + 0.5) - 1;
+	delayMicroseconds(accelerategap);
 }
 
 
@@ -37,7 +26,7 @@ void Arcs::updateStep()
 ///Note that the Step pin can only select one of the 46 pin(PL3), the remaining pins can be more demanding choice
 void Arcs::Initialize(ConfigPinStruct pinInfo)
 {
-	pinEn.Initialize(pinInfo.pinEnCh,Gpio::_OUTPUT,pinInfo.pinEnNum);
+	pinEn.Initialize(pinInfo.pinEnCh, Gpio::_OUTPUT, pinInfo.pinEnNum);
 	pinReset.Initialize(pinInfo.pinResetCh, Gpio::_OUTPUT, pinInfo.pinResetNum);
 	pinCurrentMode.Initialize(pinInfo.pinCurrentModeCh, Gpio::_OUTPUT, pinInfo.pinCurrentModeNum);
 	pinDir.Initialize(pinInfo.pinDirCh, Gpio::_OUTPUT, pinInfo.pinDirNum);
@@ -50,29 +39,30 @@ void Arcs::Initialize(ConfigPinStruct pinInfo)
 	TCCR5A = 0;
 	TCCR5B = 0;
 	TCCR5A |= _BV(COM5A0) | _BV(WGM51) | _BV(WGM50);
-	TCCR5B |= _BV(WGM52) |  _BV(WGM53);
+	TCCR5B |= _BV(WGM52) | _BV(WGM53);
+	TCCR5B |= _BV(CS50);
 }
 
 
 ///Set the speed of the stepper motor
-void Arcs::configSpeed(uint32_t lines, double speedmin,ArcsMicroStep microstep)
+void Arcs::configSpeed(uint32_t lines, double rev, ArcsMicroStep microstep)
 {
 	this->lines = lines;
-	this->speedmin = speedmin;
+	this->rev = rev;
 	this->microstep = microstep;
-	updateStep();
- //Set the motor to stop at the beginning
-  stopMotor();
+	//Set the motor to stop at the beginning
+	PRR1 |= _BV(PRTIM5);
 }
 
 
 ///accelerate
 void Arcs::speedUp(double value)
 {
-	if ((speedmin * lines) < (IOCLOCK / 2))
+	if ((rev * lines) < (IOCLOCK / 2))
 	{
-		speedmin += value;
+		rev += value;
 		updateStep();
+		delayMicroseconds(accelerategap);
 	}
 }
 
@@ -80,11 +70,16 @@ void Arcs::speedUp(double value)
 ///slow down
 void Arcs::slowDown(double value)
 {
-	if (speedmin > 0)
+	if (rev > value)
 	{
-		speedmin -= value;
-		updateStep();
-	}	
+		rev -= value;
+	}
+	else
+	{
+		rev = minSpeed;
+	}
+	updateStep();
+	delayMicroseconds(accelerategap);
 }
 
 
@@ -105,48 +100,48 @@ void Arcs::setDir(ArcsDirection dir)
 ///Set the breakdown value
 void Arcs::setMicroStep(ArcsMicroStep microstep)
 {
-  this->microstep = microstep;
+	this->microstep = microstep;
 	switch (microstep)
 	{
-		case ARCS_DIV1:
-		{
-			pinMs1.Write(LOW);
-			pinMs2.Write(LOW);
-			pinMs3.Write(LOW);
-		}
-		break;
-		case ARCS_DIV2:
-		{
-			pinMs1.Write(HIGH);
-			pinMs2.Write(LOW);
-			pinMs3.Write(LOW);
-		}
-		break;
-		case ARCS_DIV4:
-		{
-			pinMs1.Write(LOW);
-			pinMs2.Write(HIGH);
-			pinMs3.Write(LOW);
-		}
-		break;
-		case ARCS_DIV8:
-		{
-			pinMs1.Write(HIGH);
-			pinMs2.Write(HIGH);
-			pinMs3.Write(LOW);
-		}
-		break;
-		case ARCS_DIV16:
-		{
-			pinMs1.Write(HIGH);
-			pinMs2.Write(HIGH);
-			pinMs3.Write(HIGH);
-		}
-		break;
-		default:
+	case ARCS_DIV1:
+	{
+		pinMs1.Write(LOW);
+		pinMs2.Write(LOW);
+		pinMs3.Write(LOW);
+	}
+	break;
+	case ARCS_DIV2:
+	{
+		pinMs1.Write(HIGH);
+		pinMs2.Write(LOW);
+		pinMs3.Write(LOW);
+	}
+	break;
+	case ARCS_DIV4:
+	{
+		pinMs1.Write(LOW);
+		pinMs2.Write(HIGH);
+		pinMs3.Write(LOW);
+	}
+	break;
+	case ARCS_DIV8:
+	{
+		pinMs1.Write(HIGH);
+		pinMs2.Write(HIGH);
+		pinMs3.Write(LOW);
+	}
+	break;
+	case ARCS_DIV16:
+	{
+		pinMs1.Write(HIGH);
+		pinMs2.Write(HIGH);
+		pinMs3.Write(HIGH);
+	}
+	break;
+	default:
 		break;
 	}
- updateStep();
+	updateStep();
 }
 
 
@@ -167,14 +162,14 @@ void Arcs::setCurrent(ArcsCurrentMode mode)
 ///Enable stepper motor drive module
 void Arcs::enableMotor()
 {
-  pinEn.Write(LOW);
+	pinEn.Write(LOW);
 }
 
 
 ///Disable stepper motor drive module
 void Arcs::disableMotor()
 {
-  pinEn.Write(HIGH);
+	pinEn.Write(HIGH);
 }
 
 
@@ -184,4 +179,83 @@ void Arcs::Reset()
 	pinReset.Write(LOW);
 	delay(1);
 	pinReset.Write(HIGH);
+}
+
+
+///
+void Arcs::setAcceleratedSpeed(uint8_t accspe)
+{
+	acceleratedspeed = accspe;
+}
+
+
+///
+void Arcs::speedTransmission(double speedvalue)
+{
+	double currentSpeed = IOCLOCK * 30 / (OCR5A + 1) / lines / microstep;
+	bool isSpeedup = false;
+
+	if (0 != speedvalue)
+	{
+		if (uint16_t(IOCLOCK * 30 / lines / microstep / speedvalue - 1) < OCR5A)
+		{
+			isSpeedup = true;
+		}
+		else
+		{
+			isSpeedup = false;
+		}
+	}
+	else
+	{
+		isSpeedup = false;
+	}
+
+	if (isSpeedup)
+	{
+		while (currentSpeed <= speedvalue)
+		{
+			OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / currentSpeed - 1);
+			currentSpeed += acceleratedspeed;
+			delayMicroseconds(accelerategap);
+		}
+
+		if (currentSpeed > speedvalue)
+		{
+			OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / speedvalue - 1);
+			currentSpeed = speedvalue;
+			delayMicroseconds(accelerategap);
+		}
+		rev = speedvalue;
+	}
+	//slowdown
+	else
+	{
+		while (currentSpeed > speedvalue)
+		{
+			OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / currentSpeed - 1);
+			currentSpeed -= acceleratedspeed;
+			delayMicroseconds(accelerategap);
+		}
+
+		if (currentSpeed <= speedvalue)
+		{
+			if (0 == speedvalue)
+			{
+				OCR5A = (IOCLOCK * 30) / lines / microstep / 1 - 1;
+				delayMicroseconds(accelerategap);
+				PRR1 |= _BV(PRTIM5);
+			}
+			else
+			{
+				OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / speedvalue - 1);
+				delayMicroseconds(accelerategap);
+			}
+		}
+
+		if (0 < speedvalue)
+		{
+			rev = speedvalue;
+		}
+	}
 }

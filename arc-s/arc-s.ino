@@ -45,7 +45,7 @@ void setup() {
     arcs.setDir(Arcs::ARCS_REVERSE);
   else
     arcs.setDir(Arcs::ARCS_FORWARD);
-  arcs.configSpeed(200 ,200,16);
+  arcs.configSpeed(200 ,1000,16);
 }
 
 void loop() {
@@ -53,6 +53,7 @@ void loop() {
   if( dirState != digitalRead(DIR) )
   {
     dirState = digitalRead(DIR);
+    arcs.stopMotor();
     if( DisappearsShakes(DIR) )
     {
         arcs.setDir(Arcs::ARCS_FORWARD);
@@ -63,11 +64,14 @@ void loop() {
         arcs.setDir(Arcs::ARCS_REVERSE);
         Serial.println("ARCS_REVERSE");
     }
+    arcs.moveMotor(); 
     delay(10);
   }
 
   if(!digitalRead(SPEED_UP))
   {
+    if(!isMotorRun)
+      return;
     if( DisappearsShakes(SPEED_UP) )
       arcs.speedUp(10);
     delay(DELLAY);
@@ -75,6 +79,8 @@ void loop() {
 
   if(!digitalRead(SLOW_DOWN))
   {
+     if(!isMotorRun)
+      return;
     if( DisappearsShakes(SLOW_DOWN) )
       arcs.slowDown(10);
     delay(DELLAY);
