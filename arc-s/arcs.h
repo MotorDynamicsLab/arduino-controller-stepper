@@ -87,9 +87,8 @@ public:
 	void enableMotor();
 	void disableMotor();
 	void Reset();
-	void setAcceleratedSpeed(uint8_t accspe);
+	void setAcceleratedSpeed(uint8_t accspe, uint32_t delaytime);
 	void speedTransmission(double speedvalue);
-  void runInstepcounting(uint64_t stepnum,bool isRepeat);
 
 	///Start pulsing to run the motor
 	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); OCR5A = 0xfffe; speedTransmission(rev); };

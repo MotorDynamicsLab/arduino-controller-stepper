@@ -53,7 +53,8 @@ void loop() {
   if( dirState != digitalRead(DIR) )
   {
     dirState = digitalRead(DIR);
-    arcs.stopMotor();
+    if(isMotorRun)
+        arcs.stopMotor();
     if( DisappearsShakes(DIR) )
     {
         arcs.setDir(Arcs::ARCS_FORWARD);
@@ -64,7 +65,8 @@ void loop() {
         arcs.setDir(Arcs::ARCS_REVERSE);
         Serial.println("ARCS_REVERSE");
     }
-    arcs.moveMotor(); 
+    if(isMotorRun)
+        arcs.moveMotor(); 
     delay(10);
   }
 
@@ -92,7 +94,7 @@ void loop() {
     {
       isMotorRun = !isMotorRun;
       if(isMotorRun)
-        arcs.moveMotor();
+		arcs.moveMotor();
       else
         arcs.stopMotor();
     }

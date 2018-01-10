@@ -5,11 +5,12 @@
 // $Copyright: Copyright (C) LDO Systems 2018
 //###########################################################################
 #include "arcs.h"
+#include <math.h>
 #define IOCLOCK 16000000
 
 Arcs::Arcs()
 {
-	accelerategap = 5000;
+	accelerategap = 1000;
 	acceleratedspeed = 10;
 }
 
@@ -51,6 +52,7 @@ void Arcs::configSpeed(uint32_t lines, double rev, ArcsMicroStep microstep)
 	this->rev = rev;
 	this->microstep = microstep;
 	//Set the motor to stop at the beginning
+	updateStep();
 	PRR1 |= _BV(PRTIM5);
 }
 
@@ -182,14 +184,16 @@ void Arcs::Reset()
 }
 
 
-///
-void Arcs::setAcceleratedSpeed(uint8_t accspe)
+///Set the acceleration
+///acceleration = accspe / (delaytime / 1000000)
+void Arcs::setAcceleratedSpeed(uint8_t accspe, uint32_t delaytime)
 {
 	acceleratedspeed = accspe;
+	accelerategap = delaytime;
 }
 
 
-///
+///Change to the specified speed
 void Arcs::speedTransmission(double speedvalue)
 {
 	double currentSpeed = IOCLOCK * 30 / (OCR5A + 1) / lines / microstep;
