@@ -182,22 +182,23 @@ void Arcs::Reset()
 
 ///Set the acceleration
 ///acceleration = accspe / (delaytime / 1000000) * 60
-void Arcs::setAcceleration(uint8_t accspe, uint32_t delaytimeus)
+void Arcs::setAcceleration(double accelRpmPerSec)
 {
-	acceleratedspeed = accspe;
-	accelerategap = delaytimeus;
+	acceleratedspeed = accelRpmPerSec / 1000000;
 }
 
 
 ///Change to the specified speed
 void Arcs::speedTransmission(double speedvalue)
 {
-	double currentSpeed = IOCLOCK * 30 / (OCR5A + 1) / lines / microstep;
+	double temp = IOCLOCK * 30 / lines / microstep;
+	double currentSpeed = temp / (OCR5A + 1);
+
 	bool isSpeedup = false;
 
 	if (0 != speedvalue)
 	{
-		if (uint16_t(IOCLOCK * 30 / lines / microstep / speedvalue - 1) < OCR5A)
+		if ( uint16_t( temp / speedvalue - 1 ) < OCR5A )
 		{
 			isSpeedup = true;
 		}
@@ -215,14 +216,14 @@ void Arcs::speedTransmission(double speedvalue)
 	{
 		while (currentSpeed <= speedvalue)
 		{
-			OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / currentSpeed - 1);
+			OCR5A = uint16_t( temp / currentSpeed - 1);
 			currentSpeed += acceleratedspeed;
 			delayMicroseconds(accelerategap);
 		}
 
 		if (currentSpeed > speedvalue)
 		{
-			OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / speedvalue - 1);
+			OCR5A = uint16_t( temp / speedvalue - 1);
 			currentSpeed = speedvalue;
 			delayMicroseconds(accelerategap);
 		}
@@ -233,7 +234,7 @@ void Arcs::speedTransmission(double speedvalue)
 	{
 		while (currentSpeed > speedvalue)
 		{
-			OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / currentSpeed - 1);
+			OCR5A = uint16_t( temp / currentSpeed - 1);
 			currentSpeed -= acceleratedspeed;
 			delayMicroseconds(accelerategap);
 		}
@@ -242,13 +243,13 @@ void Arcs::speedTransmission(double speedvalue)
 		{
 			if (0 == speedvalue)
 			{
-				OCR5A = (IOCLOCK * 30) / lines / microstep / 1 - 1;
+				OCR5A = temp - 1;
 				delayMicroseconds(accelerategap);
 				PRR1 |= _BV(PRTIM5);
 			}
 			else
 			{
-				OCR5A = uint16_t((IOCLOCK * 30) / lines / microstep / speedvalue - 1);
+				OCR5A = uint16_t( temp / speedvalue - 1);
 				delayMicroseconds(accelerategap);
 			}
 		}

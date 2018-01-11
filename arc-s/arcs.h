@@ -43,7 +43,7 @@ private:
 	GpioIninStruct pinMs3;
 	volatile uint32_t lines;
 	volatile double rev;
-	uint16_t acceleratedspeed;
+	double acceleratedspeed;
 	uint32_t accelerategap;
 	const uint8_t minSpeed = 3;
 	bool isStartup;
@@ -87,7 +87,7 @@ public:
 	void enableMotor();
 	void disableMotor();
 	void Reset();
-	void setAcceleration(uint8_t acceValue, uint32_t delaytimeus = 1000);
+	void setAcceleration(double accelRpmPerSec);
 
 	///Start pulsing to run the motor
 	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); isStartup = true; OCR5A = 0xfffe; speedTransmission(rev); };
