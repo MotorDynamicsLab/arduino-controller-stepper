@@ -6,20 +6,41 @@
 //###########################################################################
 #ifndef _ARCS_H_
 #define _ARCS_H_
-#include "Gpio.h"
+#include "Arduino.h"
 
 class Arcs
 {
 private:
-	Gpio pinEn;
-	Gpio pinReset;
-	Gpio pinStep;
-	Gpio pinDir;
-	Gpio pinCurrentMode;
-	Gpio pinTorque;
-	Gpio pinMs1;
-	Gpio pinMs2;
-	Gpio pinMs3;
+	enum PinChannel
+	{
+		_PA = 1,
+		_PB = 2,
+		_PC = 3,
+		_PD = 4,
+		_PE = 5,
+		_PF = 6,
+		_PG = 7,
+		_PH = 8,
+		_PJ = 10,
+		_PK = 11,
+		_PL = 12
+	};
+
+	struct GpioIninStruct
+	{
+		PinChannel ch;
+		uint8_t pinnum;
+	};
+
+	GpioIninStruct pinEn;
+	GpioIninStruct pinStep;
+	GpioIninStruct pinDir;
+	GpioIninStruct pinReset;
+	GpioIninStruct pinCurrentMode;
+	GpioIninStruct pinTorque;
+	GpioIninStruct pinMs1;
+	GpioIninStruct pinMs2;
+	GpioIninStruct pinMs3;
 	volatile uint32_t lines;
 	volatile double rev;
 	uint16_t acceleratedspeed;
@@ -48,38 +69,16 @@ public:
 		ARCS_FORWARD,
 		ARCS_REVERSE,
 	};
-	struct ConfigPinStruct
-	{
-		Gpio::PinChannel pinEnCh;
-		uint8_t pinEnNum;
-
-		Gpio::PinChannel pinResetCh;
-		uint8_t pinResetNum;
-
-		Gpio::PinChannel pinCurrentModeCh;
-		uint8_t pinCurrentModeNum;
-
-		Gpio::PinChannel pinDirCh;
-		uint8_t pinDirNum;
-
-		Gpio::PinChannel pinMs1Ch;
-		uint8_t pinMs1Num;
-
-		Gpio::PinChannel pinMs2Ch;
-		uint8_t pinMs2Num;
-
-		Gpio::PinChannel pinMs3Ch;
-		uint8_t pinMs3Num;
-	};
 
 private:
 	ArcsMicroStep microstep;
-	void updateStep();
 	void speedTransmission(double speedvalue);
+	void configPin(GpioIninStruct pininfo);
+	void writePin(GpioIninStruct pininfo,bool state);
 
 public:
 	Arcs();
-	void Initialize(ConfigPinStruct pinInfo);
+	void Initialize();
 	void configMotor(uint32_t stepsPerRev, ArcsMicroStep microstep = 16);
 	void setSpeed(double speedRPM);
 	void setDir(ArcsDirection dir);
@@ -88,13 +87,13 @@ public:
 	void enableMotor();
 	void disableMotor();
 	void Reset();
-	void setAcceleration(uint8_t accspe, uint32_t delaytime);
+	void setAcceleration(uint8_t acceValue, uint32_t delaytimeus = 1000);
 
 	///Start pulsing to run the motor
 	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); isStartup = true; OCR5A = 0xfffe; speedTransmission(rev); };
 
 	///Stop the pulse to stop the motor
-	inline void stopMotor() { speedTransmission(0); isStartup = false;};
+	inline void stopMotor() { speedTransmission(0); isStartup = false; };
 };
 
 #endif /* _ARCS_H_ */

@@ -24,21 +24,8 @@ void setup() {
   
   pinMode(STOP_START,INPUT);
   digitalWrite(STOP_START,HIGH);
-
-  Arcs::ConfigPinStruct pinInfo;
-  pinInfo.pinEnCh = Gpio::_PJ;
-  pinInfo.pinEnNum = 2;
-  pinInfo.pinCurrentModeCh = Gpio::_PH;
-  pinInfo.pinCurrentModeNum = 7;
-  pinInfo.pinDirCh = Gpio::_PJ;
-  pinInfo.pinDirNum = 3;
-  pinInfo.pinMs1Ch = Gpio::_PJ;
-  pinInfo.pinMs1Num = 5;
-  pinInfo.pinMs2Ch = Gpio::_PJ;
-  pinInfo.pinMs2Num = 6;
-  pinInfo.pinMs3Ch = Gpio::_PJ;
-  pinInfo.pinMs3Num = 7;
-  arcs.Initialize(pinInfo);
+  
+  arcs.Initialize();
   
   //Check the direction before starting
   dirState = digitalRead(DIR);

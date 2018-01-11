@@ -12,30 +12,45 @@ Arcs::Arcs()
 {
 	accelerategap = 1000;
 	acceleratedspeed = 10;
-  isStartup = false;
+	isStartup = false;
 }
 
 
-///Update pulse speed
-void Arcs::updateStep()
+///Initialize the pin and timer5
+void Arcs::Initialize()
 {
-	OCR5A = uint16_t((IOCLOCK / 2) / (lines * rev * microstep / 60) + 0.5) - 1;
-	delayMicroseconds(accelerategap);
-}
+	pinEn.ch = _PJ;
+	pinEn.pinnum = 2;
+	configPin(pinEn);
 
+	pinStep.ch = _PL;
+	pinStep.pinnum = 3;
+	configPin(pinStep);
 
-///Initialize the pin
-///Note that the Step pin can only select one of the 46 pin(PL3), the remaining pins can be more demanding choice
-void Arcs::Initialize(ConfigPinStruct pinInfo)
-{
-	pinEn.Initialize(pinInfo.pinEnCh, Gpio::_OUTPUT, pinInfo.pinEnNum);
-	pinReset.Initialize(pinInfo.pinResetCh, Gpio::_OUTPUT, pinInfo.pinResetNum);
-	pinCurrentMode.Initialize(pinInfo.pinCurrentModeCh, Gpio::_OUTPUT, pinInfo.pinCurrentModeNum);
-	pinDir.Initialize(pinInfo.pinDirCh, Gpio::_OUTPUT, pinInfo.pinDirNum);
-	pinMs1.Initialize(pinInfo.pinMs1Ch, Gpio::_OUTPUT, pinInfo.pinMs1Num);
-	pinMs2.Initialize(pinInfo.pinMs2Ch, Gpio::_OUTPUT, pinInfo.pinMs2Num);
-	pinMs3.Initialize(pinInfo.pinMs3Ch, Gpio::_OUTPUT, pinInfo.pinMs3Num);
-	pinStep.Initialize(Gpio::_PL, Gpio::_OUTPUT, 3);
+	pinDir.ch = _PJ;
+	pinDir.pinnum = 3;
+	configPin(pinDir);
+
+	pinCurrentMode.ch = _PH;
+	pinCurrentMode.pinnum = 7;
+	configPin(pinCurrentMode);
+
+	pinTorque.ch = _PJ;
+	pinTorque.pinnum = 2;
+	configPin(pinTorque);
+
+	pinMs1.ch = _PJ;
+	pinMs1.pinnum = 5;
+	configPin(pinMs1);
+
+	pinMs2.ch = _PJ;
+	pinMs2.pinnum = 8;
+	configPin(pinMs2);
+
+	pinMs3.ch = _PJ;
+	pinMs3.pinnum = 7;
+	configPin(pinMs3);
+
 
 	//Initialize timer 5
 	TCCR5A = 0;
@@ -71,11 +86,11 @@ void Arcs::setDir(ArcsDirection dir)
 {
 	if (ARCS_FORWARD == dir)
 	{
-		pinDir.Write(LOW);
+		writePin(pinDir,LOW);
 	}
 	else
 	{
-		pinDir.Write(HIGH);
+		writePin(pinDir,HIGH);
 	}
 }
 
@@ -88,43 +103,43 @@ void Arcs::setMicroStep(ArcsMicroStep microstep)
 	{
 	case ARCS_DIV1:
 	{
-		pinMs1.Write(LOW);
-		pinMs2.Write(LOW);
-		pinMs3.Write(LOW);
+		writePin(pinMs1,LOW);
+		writePin(pinMs2,LOW);
+		writePin(pinMs3,LOW);
 	}
 	break;
 	case ARCS_DIV2:
 	{
-		pinMs1.Write(HIGH);
-		pinMs2.Write(LOW);
-		pinMs3.Write(LOW);
+		writePin(pinMs1,HIGH);
+		writePin(pinMs2,LOW);
+		writePin(pinMs3,LOW);
 	}
 	break;
 	case ARCS_DIV4:
 	{
-		pinMs1.Write(LOW);
-		pinMs2.Write(HIGH);
-		pinMs3.Write(LOW);
+		writePin(pinMs1,LOW);
+		writePin(pinMs2,HIGH);
+		writePin(pinMs3,LOW);
 	}
 	break;
 	case ARCS_DIV8:
 	{
-		pinMs1.Write(HIGH);
-		pinMs2.Write(HIGH);
-		pinMs3.Write(LOW);
+		writePin(pinMs1,HIGH);
+		writePin(pinMs2,HIGH);
+		writePin(pinMs3,LOW);
 	}
 	break;
 	case ARCS_DIV16:
 	{
-		pinMs1.Write(HIGH);
-		pinMs2.Write(HIGH);
-		pinMs3.Write(HIGH);
+		writePin(pinMs1,HIGH);
+		writePin(pinMs2,HIGH);
+		writePin(pinMs3,HIGH);
 	}
 	break;
 	default:
 		break;
 	}
-	updateStep();
+	speedTransmission(rev);
 }
 
 
@@ -133,11 +148,11 @@ void Arcs::setCurrent(ArcsCurrentMode mode)
 {
 	if (ARCS_MODE_1 == mode)
 	{
-		pinCurrentMode.Write(LOW);
+		writePin(pinCurrentMode,LOW);
 	}
 	else
 	{
-		pinCurrentMode.Write(HIGH);
+		writePin(pinCurrentMode,HIGH);
 	}
 }
 
@@ -145,32 +160,32 @@ void Arcs::setCurrent(ArcsCurrentMode mode)
 ///Enable stepper motor drive module
 void Arcs::enableMotor()
 {
-	pinEn.Write(LOW);
+	writePin(pinEn,LOW);
 }
 
 
 ///Disable stepper motor drive module
 void Arcs::disableMotor()
 {
-	pinEn.Write(HIGH);
+	writePin(pinEn,HIGH);
 }
 
 
 ///Restart stepper motor drive module
 void Arcs::Reset()
 {
-	pinReset.Write(LOW);
+	writePin(pinReset,LOW);
 	delay(1);
-	pinReset.Write(HIGH);
+	writePin(pinReset,HIGH);
 }
 
 
 ///Set the acceleration
-///acceleration = accspe / (delaytime / 1000000)
-void Arcs::setAcceleration(uint8_t accspe, uint32_t delaytime)
+///acceleration = accspe / (delaytime / 1000000) * 60
+void Arcs::setAcceleration(uint8_t accspe, uint32_t delaytimeus)
 {
 	acceleratedspeed = accspe;
-	accelerategap = delaytime;
+	accelerategap = delaytimeus;
 }
 
 
@@ -243,4 +258,40 @@ void Arcs::speedTransmission(double speedvalue)
 			rev = speedvalue;
 		}
 	}
+}
+
+
+///Configure the corresponding pin as output
+void Arcs::configPin(GpioIninStruct pininfo)
+{
+	volatile uint8_t *reg, *out;
+	reg = portModeRegister(pininfo.ch);
+	out = portOutputRegister(pininfo.ch);
+
+	uint8_t oldSREG = SREG;
+	cli();
+	*reg |= (1 << pininfo.pinnum);
+	SREG = oldSREG;
+}
+
+
+///Modify the GPIO pin output level
+void Arcs::writePin(GpioIninStruct pininfo, bool state)
+{
+	volatile uint8_t *out;
+	out = portOutputRegister(pininfo.ch);
+
+	uint8_t oldSREG = SREG;
+	cli();
+
+	if (LOW == state)
+	{
+		*out &= ~(1 << pininfo.pinnum);
+	}
+	else
+	{
+		*out |= (1 << pininfo.pinnum);
+	}
+
+	SREG = oldSREG;
 }
