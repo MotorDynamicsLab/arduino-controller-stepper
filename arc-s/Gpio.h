@@ -69,7 +69,7 @@ private:
 	PinMode mod;
 	uint8_t pinnum;
 
-	void ClosePwmClock();
+	void disconnectPwm();
 	void turnOffPWM(uint8_t timer);
 
 public:

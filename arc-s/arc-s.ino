@@ -8,9 +8,11 @@
 Arcs arcs;
 bool dirState;
 bool isMotorRun = false;
+uint32_t speed = 1000;
 
 void setup() {
   // put your setup code here, to run once:
+  //nitialize the pin
   pinMode(DIR,INPUT);
   digitalWrite(DIR,HIGH);
   
@@ -22,8 +24,6 @@ void setup() {
   
   pinMode(STOP_START,INPUT);
   digitalWrite(STOP_START,HIGH);
-
-  Serial.begin(9600);
 
   Arcs::ConfigPinStruct pinInfo;
   pinInfo.pinEnCh = Gpio::_PJ;
@@ -40,22 +40,28 @@ void setup() {
   pinInfo.pinMs3Num = 7;
   arcs.Initialize(pinInfo);
   
+  //Check the direction before starting
   dirState = digitalRead(DIR);
   if(dirState)
     arcs.setDir(Arcs::ARCS_REVERSE);
   else
     arcs.setDir(Arcs::ARCS_FORWARD);
-  arcs.configSpeed(200 ,1000,16);
+
+  //Configure subdivision and steps as well as initial speed
+  arcs.configMotor(200,16);
+  arcs.setSpeed(speed);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  //change direction
   if( dirState != digitalRead(DIR) )
   {
+	//Judge the running status, if it is running, stop and then change the direction
     dirState = digitalRead(DIR);
     if(isMotorRun)
         arcs.stopMotor();
-    if( DisappearsShakes(DIR) )
+    if( debounce(DIR) )
     {
         arcs.setDir(Arcs::ARCS_FORWARD);
         Serial.println("ARCS_FORWARD");
@@ -70,27 +76,38 @@ void loop() {
     delay(10);
   }
 
+  //accelerate
   if(!digitalRead(SPEED_UP))
   {
+	//Prohibit acceleration when stopped
     if(!isMotorRun)
       return;
-    if( DisappearsShakes(SPEED_UP) )
-      arcs.speedUp(10);
+    if( debounce(SPEED_UP) )
+	{
+		speed += 10;
+		arcs.setSpeed(speed);
+	}
     delay(DELLAY);
   }
 
+  //slow down
   if(!digitalRead(SLOW_DOWN))
   {
+	 //Deceleration is prohibited when stopping operation
      if(!isMotorRun)
       return;
-    if( DisappearsShakes(SLOW_DOWN) )
-      arcs.slowDown(10);
+    if( debounce(SLOW_DOWN) )
+	{
+		speed -= 10;
+		arcs.setSpeed(speed);
+	}
     delay(DELLAY);
   }
 
+  //Start and stop
   if(!digitalRead(STOP_START))
   {
-    if( DisappearsShakes(STOP_START) )
+    if( debounce(STOP_START) )
     {
       isMotorRun = !isMotorRun;
       if(isMotorRun)
@@ -98,13 +115,15 @@ void loop() {
       else
         arcs.stopMotor();
     }
-
+	//Waiting for the button to release, to prevent continuous switching in an operation
     while( !digitalRead(STOP_START) );
     delay(DELLAY);
   }
 }
 
-bool DisappearsShakes(uint8_t pin)
+
+///Eliminate button jitter
+bool debounce(uint8_t pin)
 {
   delay(10);
   if(digitalRead(pin))

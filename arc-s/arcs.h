@@ -25,6 +25,7 @@ private:
 	uint16_t acceleratedspeed;
 	uint32_t accelerategap;
 	const uint8_t minSpeed = 3;
+	bool isStartup;
 
 public:
 	enum ArcsMicroStep
@@ -74,27 +75,26 @@ public:
 private:
 	ArcsMicroStep microstep;
 	void updateStep();
+	void speedTransmission(double speedvalue);
 
 public:
 	Arcs();
 	void Initialize(ConfigPinStruct pinInfo);
-	void configSpeed(uint32_t lines, double rev, ArcsMicroStep microstep = 16);
-	void speedUp(double value);
-	void slowDown(double value);
+	void configMotor(uint32_t stepsPerRev, ArcsMicroStep microstep = 16);
+	void setSpeed(double speedRPM);
 	void setDir(ArcsDirection dir);
 	void setMicroStep(ArcsMicroStep microstep);
 	void setCurrent(ArcsCurrentMode mode);
 	void enableMotor();
 	void disableMotor();
 	void Reset();
-	void setAcceleratedSpeed(uint8_t accspe, uint32_t delaytime);
-	void speedTransmission(double speedvalue);
+	void setAcceleration(uint8_t accspe, uint32_t delaytime);
 
 	///Start pulsing to run the motor
-	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); OCR5A = 0xfffe; speedTransmission(rev); };
+	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); isStartup = true; OCR5A = 0xfffe; speedTransmission(rev); };
 
 	///Stop the pulse to stop the motor
-	inline void stopMotor() { speedTransmission(0); };
+	inline void stopMotor() { speedTransmission(0); isStartup = false;};
 };
 
 #endif /* _ARCS_H_ */

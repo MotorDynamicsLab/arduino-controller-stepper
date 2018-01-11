@@ -101,7 +101,7 @@ void Gpio::turnOffPWM(uint8_t timer)
 
 
 ///Turn off the PWM clock
-void Gpio::ClosePwmClock()
+void Gpio::disconnectPwm()
 {
 	for (int i = 0; PwmClockTable[i].pwmclock != _END; i++)
 	{
@@ -150,7 +150,7 @@ void Gpio::SetPinMode(PinMode mod)
 	SREG = oldSREG;
 
 	// If the pin that support PWM output, we need to turn it off
-	ClosePwmClock();
+	disconnectPwm();
 }
 
 

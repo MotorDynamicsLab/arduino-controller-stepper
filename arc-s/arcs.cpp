@@ -12,6 +12,7 @@ Arcs::Arcs()
 {
 	accelerategap = 1000;
 	acceleratedspeed = 10;
+  isStartup = false;
 }
 
 
@@ -45,43 +46,23 @@ void Arcs::Initialize(ConfigPinStruct pinInfo)
 }
 
 
-///Set the speed of the stepper motor
-void Arcs::configSpeed(uint32_t lines, double rev, ArcsMicroStep microstep)
+///Configure the number of motor steps and subdivisions
+void Arcs::configMotor(uint32_t stepsPerRev, ArcsMicroStep microstep)
 {
-	this->lines = lines;
-	this->rev = rev;
+	lines = stepsPerRev;
 	this->microstep = microstep;
-	//Set the motor to stop at the beginning
-	updateStep();
+  OCR5A = 0xfffe;
 	PRR1 |= _BV(PRTIM5);
 }
 
 
-///accelerate
-void Arcs::speedUp(double value)
+///Set the speed
+void Arcs::setSpeed(double speedRPM)
 {
-	if ((rev * lines) < (IOCLOCK / 2))
-	{
-		rev += value;
-		updateStep();
-		delayMicroseconds(accelerategap);
-	}
-}
-
-
-///slow down
-void Arcs::slowDown(double value)
-{
-	if (rev > value)
-	{
-		rev -= value;
-	}
-	else
-	{
-		rev = minSpeed;
-	}
-	updateStep();
-	delayMicroseconds(accelerategap);
+	rev = speedRPM;
+	if( (!isStartup) | (speedRPM <= minSpeed) )
+    return;
+	speedTransmission(speedRPM);
 }
 
 
@@ -186,7 +167,7 @@ void Arcs::Reset()
 
 ///Set the acceleration
 ///acceleration = accspe / (delaytime / 1000000)
-void Arcs::setAcceleratedSpeed(uint8_t accspe, uint32_t delaytime)
+void Arcs::setAcceleration(uint8_t accspe, uint32_t delaytime)
 {
 	acceleratedspeed = accspe;
 	accelerategap = delaytime;
