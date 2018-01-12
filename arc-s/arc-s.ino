@@ -65,9 +65,6 @@ void loop() {
   //accelerate
   if(!digitalRead(SPEED_UP))
   {
-	//Prohibit acceleration when stopped
-    if(!isMotorRun)
-      return;
     if( debounce(SPEED_UP) )
 	{
 		speed += 10;
@@ -79,9 +76,6 @@ void loop() {
   //slow down
   if(!digitalRead(SLOW_DOWN))
   {
-	 //Deceleration is prohibited when stopping operation
-     if(!isMotorRun)
-      return;
     if( debounce(SLOW_DOWN) )
 	{
 		speed -= 10;
