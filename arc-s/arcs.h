@@ -78,15 +78,14 @@ private:
 
 public:
 	Arcs();
-	void Initialize();
-	void configMotor(uint32_t stepsPerRev, ArcsMicroStep microstep = 16);
+	void initialize(uint32_t stepsPerRev, ArcsMicroStep microstep = 16);
 	void setSpeed(double speedRPM);
 	void setDir(ArcsDirection dir);
 	void setMicroStep(ArcsMicroStep microstep);
 	void setCurrent(ArcsCurrentMode mode);
 	void enableMotor();
 	void disableMotor();
-	void Reset();
+	void reset();
 	void setAcceleration(double accelRpmPerSec);
 
 	///Start pulsing to run the motor

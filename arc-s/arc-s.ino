@@ -25,7 +25,8 @@ void setup() {
   pinMode(STOP_START,INPUT);
   digitalWrite(STOP_START,HIGH);
   
-  arcs.Initialize();
+  //Configure subdivision and steps as well as initial speed and the number of motor steps and subdivisions
+  arcs.initialize(200,16);
   
   //Check the direction before starting
   dirState = digitalRead(DIR);
@@ -34,8 +35,6 @@ void setup() {
   else
     arcs.setDir(Arcs::ARCS_FORWARD);
 
-  //Configure subdivision and steps as well as initial speed
-  arcs.configMotor(200,16);
   arcs.setSpeed(speed);
 }
 

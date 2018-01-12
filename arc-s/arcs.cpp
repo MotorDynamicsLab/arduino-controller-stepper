@@ -17,7 +17,8 @@ Arcs::Arcs()
 
 
 ///Initialize the pin and timer5
-void Arcs::Initialize()
+///Configure the number of motor steps and subdivisions
+void Arcs::initialize(uint32_t stepsPerRev, ArcsMicroStep microstep = 16)
 {
 	pinEn.ch = _PJ;
 	pinEn.pinnum = 2;
@@ -58,15 +59,10 @@ void Arcs::Initialize()
 	TCCR5A |= _BV(COM5A0) | _BV(WGM51) | _BV(WGM50);
 	TCCR5B |= _BV(WGM52) | _BV(WGM53);
 	TCCR5B |= _BV(CS50);
-}
 
-
-///Configure the number of motor steps and subdivisions
-void Arcs::configMotor(uint32_t stepsPerRev, ArcsMicroStep microstep)
-{
 	lines = stepsPerRev;
 	this->microstep = microstep;
-  OCR5A = 0xfffe;
+	OCR5A = 0xfffe;
 	PRR1 |= _BV(PRTIM5);
 }
 
@@ -178,7 +174,7 @@ void Arcs::disableMotor()
 
 
 ///Restart stepper motor drive module
-void Arcs::Reset()
+void Arcs::reset()
 {
 	writePin(pinReset,LOW);
 	delay(1);
