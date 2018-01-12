@@ -74,8 +74,14 @@ void Arcs::configMotor(uint32_t stepsPerRev, ArcsMicroStep microstep)
 ///Set the speed
 void Arcs::setSpeed(double speedRPM)
 {
+  if(speedRPM <= minSpeed)
+  {
+    rev = minSpeed;
+    return;
+  }
+    
 	rev = speedRPM;
-	if( (!isStartup) | (speedRPM <= minSpeed) )
+	if( !isStartup )
     return;
 	speedTransmission(speedRPM);
 }

@@ -8,7 +8,7 @@
 Arcs arcs;
 bool dirState;
 bool isMotorRun = false;
-uint32_t speed = 1000;
+int32_t speed = 1000;
 
 void setup() {
   // put your setup code here, to run once:
@@ -86,6 +86,8 @@ void loop() {
     if( debounce(SLOW_DOWN) )
 	{
 		speed -= 10;
+    if(speed <= 0)
+      speed = 1;
 		arcs.setSpeed(speed);
 	}
     delay(DELLAY);
