@@ -302,7 +302,7 @@ void Arcs::writePin(GpioIninStruct pininfo, bool state)
 
 ///Run the specified number of steps
 ///Note: The actual speed may be less than the specified speed
-void Arcs::runBysteep(uint32_t steep, double maxspeedRPM)
+void Arcs::runByStep(uint32_t steep, double maxSpedRPM)
 {
 	//Disconnect timer 5 from GPIO
 	PRR1 &= ~_BV(PRTIM5);
@@ -311,9 +311,9 @@ void Arcs::runBysteep(uint32_t steep, double maxspeedRPM)
 
 	uint32_t steepcount = 0;
 	uint32_t temp = 0;
-	uint32_t maxspeed = uint32_t(maxspeedRPM * 200 * 16 / 60);
+	uint32_t maxsped = uint32_t(maxSpedRPM * 200 * 16 / 60);
 	uint32_t maxdelaytime = 250;
-	uint32_t mindelaytime = uint32_t(1.0 / 2.0 / maxspeed * 1000000 + 0.5);
+	uint32_t mindelaytime = uint32_t(1.0 / 2.0 / maxsped * 1000000 + 0.5);
 	uint32_t accelerategape = 40;
 	uint8_t delaytime = maxdelaytime;
 
@@ -330,12 +330,12 @@ void Arcs::runBysteep(uint32_t steep, double maxspeedRPM)
 		return;
 	}
 
-	uint32_t maxspeedupseppd = uint32_t(steep / 5.0);
+	uint32_t maxspeedupsped = uint32_t(steep / 5.0);
 	uint32_t decelerationPosition = steep - 3 * lines * microstep;
 
 	while (steepcount < steep)
 	{
-		if (steepcount < maxspeedupseppd)
+		if (steepcount < maxspeedupsped)
 		{
 			if (temp >= accelerategape)
 			{
