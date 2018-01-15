@@ -70,15 +70,15 @@ void Arcs::initialize(uint32_t stepsPerRev, ArcsMicroStep microstep = 16)
 ///Set the speed
 void Arcs::setSpeed(double speedRPM)
 {
-  if(speedRPM <= minSpeed)
-  {
-    rev = minSpeed;
-    return;
-  }
-    
+	if (speedRPM <= minSpeed)
+	{
+		rev = minSpeed;
+		return;
+	}
+
 	rev = speedRPM;
-	if( !isStartup )
-    return;
+	if (!isStartup)
+		return;
 	speedTransmission(speedRPM);
 }
 
@@ -88,11 +88,11 @@ void Arcs::setDir(ArcsDirection dir)
 {
 	if (ARCS_FORWARD == dir)
 	{
-		writePin(pinDir,LOW);
+		writePin(pinDir, LOW);
 	}
 	else
 	{
-		writePin(pinDir,HIGH);
+		writePin(pinDir, HIGH);
 	}
 }
 
@@ -105,37 +105,37 @@ void Arcs::setMicroStep(ArcsMicroStep microstep)
 	{
 	case ARCS_DIV1:
 	{
-		writePin(pinMs1,LOW);
-		writePin(pinMs2,LOW);
-		writePin(pinMs3,LOW);
+		writePin(pinMs1, LOW);
+		writePin(pinMs2, LOW);
+		writePin(pinMs3, LOW);
 	}
 	break;
 	case ARCS_DIV2:
 	{
-		writePin(pinMs1,HIGH);
-		writePin(pinMs2,LOW);
-		writePin(pinMs3,LOW);
+		writePin(pinMs1, HIGH);
+		writePin(pinMs2, LOW);
+		writePin(pinMs3, LOW);
 	}
 	break;
 	case ARCS_DIV4:
 	{
-		writePin(pinMs1,LOW);
-		writePin(pinMs2,HIGH);
-		writePin(pinMs3,LOW);
+		writePin(pinMs1, LOW);
+		writePin(pinMs2, HIGH);
+		writePin(pinMs3, LOW);
 	}
 	break;
 	case ARCS_DIV8:
 	{
-		writePin(pinMs1,HIGH);
-		writePin(pinMs2,HIGH);
-		writePin(pinMs3,LOW);
+		writePin(pinMs1, HIGH);
+		writePin(pinMs2, HIGH);
+		writePin(pinMs3, LOW);
 	}
 	break;
 	case ARCS_DIV16:
 	{
-		writePin(pinMs1,HIGH);
-		writePin(pinMs2,HIGH);
-		writePin(pinMs3,HIGH);
+		writePin(pinMs1, HIGH);
+		writePin(pinMs2, HIGH);
+		writePin(pinMs3, HIGH);
 	}
 	break;
 	default:
@@ -150,11 +150,11 @@ void Arcs::setCurrent(ArcsCurrentMode mode)
 {
 	if (ARCS_MODE_1 == mode)
 	{
-		writePin(pinCurrentMode,LOW);
+		writePin(pinCurrentMode, LOW);
 	}
 	else
 	{
-		writePin(pinCurrentMode,HIGH);
+		writePin(pinCurrentMode, HIGH);
 	}
 }
 
@@ -162,23 +162,23 @@ void Arcs::setCurrent(ArcsCurrentMode mode)
 ///Enable stepper motor drive module
 void Arcs::enableMotor()
 {
-	writePin(pinEn,LOW);
+	writePin(pinEn, LOW);
 }
 
 
 ///Disable stepper motor drive module
 void Arcs::disableMotor()
 {
-	writePin(pinEn,HIGH);
+	writePin(pinEn, HIGH);
 }
 
 
 ///Restart stepper motor drive module
 void Arcs::reset()
 {
-	writePin(pinReset,LOW);
+	writePin(pinReset, LOW);
 	delay(1);
-	writePin(pinReset,HIGH);
+	writePin(pinReset, HIGH);
 }
 
 
@@ -200,7 +200,7 @@ void Arcs::speedTransmission(double speedvalue)
 
 	if (0 != speedvalue)
 	{
-		if ( uint16_t( temp / speedvalue - 1 ) < OCR5A )
+		if (uint16_t(temp / speedvalue - 1) < OCR5A)
 		{
 			isSpeedup = true;
 		}
@@ -218,14 +218,14 @@ void Arcs::speedTransmission(double speedvalue)
 	{
 		while (currentSpeed <= speedvalue)
 		{
-			OCR5A = uint16_t( temp / currentSpeed - 1);
+			OCR5A = uint16_t(temp / currentSpeed - 1);
 			currentSpeed += acceleratedspeed;
 			delayMicroseconds(accelerategap);
 		}
 
 		if (currentSpeed > speedvalue)
 		{
-			OCR5A = uint16_t( temp / speedvalue - 1);
+			OCR5A = uint16_t(temp / speedvalue - 1);
 			currentSpeed = speedvalue;
 			delayMicroseconds(accelerategap);
 		}
@@ -236,7 +236,7 @@ void Arcs::speedTransmission(double speedvalue)
 	{
 		while (currentSpeed > speedvalue)
 		{
-			OCR5A = uint16_t( temp / currentSpeed - 1);
+			OCR5A = uint16_t(temp / currentSpeed - 1);
 			currentSpeed -= acceleratedspeed;
 			delayMicroseconds(accelerategap);
 		}
@@ -251,7 +251,7 @@ void Arcs::speedTransmission(double speedvalue)
 			}
 			else
 			{
-				OCR5A = uint16_t( temp / speedvalue - 1);
+				OCR5A = uint16_t(temp / speedvalue - 1);
 				delayMicroseconds(accelerategap);
 			}
 		}
@@ -297,4 +297,77 @@ void Arcs::writePin(GpioIninStruct pininfo, bool state)
 	}
 
 	SREG = oldSREG;
+}
+
+
+///Run the specified number of steps
+///Note: The actual speed may be less than the specified speed
+void Arcs::runBysteep(uint32_t steep, double maxspeedRPM)
+{
+	//Disconnect timer 5 from GPIO
+	PRR1 &= ~_BV(PRTIM5);
+	TCCR5A &= ~(_BV(COM5A1) | _BV(COM5A0));
+	PRR1 |= _BV(PRTIM5);
+
+	uint32_t steepcount = 0;
+	uint32_t temp = 0;
+	uint32_t maxspeed = uint32_t(maxspeedRPM * 200 * 16 / 60);
+	uint32_t maxdelaytime = 250;
+	uint32_t mindelaytime = uint32_t(1.0 / 2.0 / maxspeed * 1000000 + 0.5);
+	uint32_t accelerategape = 40;
+	uint8_t delaytime = maxdelaytime;
+
+	if (steep <= lines * microstep * 5)
+	{
+		while (steep > 0)
+		{
+			writePin(pinStep, LOW);
+			delayMicroseconds(maxdelaytime - 100);
+			writePin(pinStep, HIGH);
+			delayMicroseconds(maxdelaytime - 100);
+			steep--;
+		}
+		return;
+	}
+
+	uint32_t maxspeedupseppd = uint32_t(steep / 5.0);
+	uint32_t decelerationPosition = steep - 3 * lines * microstep;
+
+	while (steepcount < steep)
+	{
+		if (steepcount < maxspeedupseppd)
+		{
+			if (temp >= accelerategape)
+			{
+				if (delaytime > mindelaytime)
+				{
+					delaytime--;
+				}
+				temp = 0;
+			}
+		}
+		else if (steepcount >= decelerationPosition)
+		{
+			if (temp >= accelerategape)
+			{
+				if (delaytime < maxdelaytime)
+				{
+					delaytime++;
+				}
+				temp = 0;
+			}
+		}
+
+		temp++;
+		writePin(pinStep, LOW);
+		delayMicroseconds(delaytime);
+		writePin(pinStep, HIGH);
+		delayMicroseconds(delaytime);
+		steepcount++;
+	}
+
+	//Establish GPIO and timer 5 connection
+	PRR1 &= ~_BV(PRTIM5);
+	TCCR5A |= _BV(COM5A0) | _BV(WGM51) | _BV(WGM50);
+	PRR1 |= _BV(PRTIM5);
 }
