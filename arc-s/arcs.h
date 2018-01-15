@@ -74,7 +74,7 @@ private:
 	ArcsMicroStep microstep;
 	void speedTransmission(double speedvalue);
 	void configPin(GpioIninStruct pininfo);
-	void writePin(GpioIninStruct pininfo, bool state);
+	void writePin(GpioIninStruct pininfo,bool state);
 
 public:
 	Arcs();
@@ -87,7 +87,6 @@ public:
 	void disableMotor();
 	void reset();
 	void setAcceleration(double accelRpmPerSec);
-	void runBysteep(uint32_t steep, double maxspeedRPM);
 
 	///Start pulsing to run the motor
 	inline void moveMotor() { PRR1 &= ~_BV(PRTIM5); isStartup = true; OCR5A = 0xfffe; speedTransmission(rev); };

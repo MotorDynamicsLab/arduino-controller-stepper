@@ -91,14 +91,14 @@ void loop() {
   {
     if( debounce(STOP_START) )
     {
-      while( !digitalRead(STOP_START) );
       isMotorRun = !isMotorRun;
       if(isMotorRun)
-		      arcs.moveMotor();
+		arcs.moveMotor();
       else
         arcs.stopMotor();
     }
 	//Waiting for the button to release, to prevent continuous switching in an operation
+    while( !digitalRead(STOP_START) );
     delay(DELLAY);
   }
 }
