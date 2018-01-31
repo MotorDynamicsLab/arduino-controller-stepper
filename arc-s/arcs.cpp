@@ -45,7 +45,7 @@ void Arcs::initialize(uint32_t stepsPerRev, ArcsMicroStep microstep = 16)
 	configPin(pinMs1);
 
 	pinMs2.ch = _PJ;
-	pinMs2.pinnum = 8;
+	pinMs2.pinnum = 6;
 	configPin(pinMs2);
 
 	pinMs3.ch = _PJ;
@@ -64,6 +64,8 @@ void Arcs::initialize(uint32_t stepsPerRev, ArcsMicroStep microstep = 16)
 	this->microstep = microstep;
 	OCR5A = 0xfffe;
 	PRR1 |= _BV(PRTIM5);
+
+  setMicroStep(this->microstep);
 }
 
 
@@ -141,7 +143,7 @@ void Arcs::setMicroStep(ArcsMicroStep microstep)
 	default:
 		break;
 	}
-	speedTransmission(rev);
+	//speedTransmission(rev);
 }
 
 

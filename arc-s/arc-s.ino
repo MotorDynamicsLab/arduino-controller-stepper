@@ -24,6 +24,8 @@ void setup() {
   
   pinMode(STOP_START,INPUT);
   digitalWrite(STOP_START,HIGH);
+
+  arcs.setCurrent(Arcs::ARCS_MODE_1);
   
   //Configure subdivision and steps as well as initial speed and the number of motor steps and subdivisions
   arcs.initialize(200,16);
@@ -50,12 +52,10 @@ void loop() {
     if( debounce(DIR) )
     {
         arcs.setDir(Arcs::ARCS_FORWARD);
-        Serial.println("ARCS_FORWARD");
     }
     else
     {
         arcs.setDir(Arcs::ARCS_REVERSE);
-        Serial.println("ARCS_REVERSE");
     }
     if(isMotorRun)
         arcs.moveMotor(); 
